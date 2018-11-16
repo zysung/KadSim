@@ -10,19 +10,37 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://H:/peersim-1.0.5/djep-1.0.0.jar!/" />
-          <root url="jar://H:/peersim-1.0.5/jep-2.3.0.jar!/" />
-          <root url="jar://H:/peersim-1.0.5/peersim-1.0.5.jar!/" />
-          <root url="jar://H:/peersim-1.0.5/peersim-doclet.jar!/" />
-          <root url="file://H:/peersim-1.0.5" />
+          <root url="jar://$MODULE_DIR$/jar/djep-1.0.0.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="file://H:/peersim-1.0.5/doc" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="file://H:/peersim-1.0.5/src" />
-        </SOURCES>
-        <jarDirectory url="file://H:/peersim-1.0.5" recursive="false" />
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jar/jep-2.3.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jar/peersim-1.0.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jar/peersim-doclet.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
   </component>
