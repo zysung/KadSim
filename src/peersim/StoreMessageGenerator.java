@@ -53,6 +53,7 @@ public class StoreMessageGenerator implements Control {
 		StoreFile sf = new StoreFile(key,value);
 		Message m = Message.makeStoreReq(sf);
 		m.timestamp = CommonState.getTime();
+		m.dest = key;
 
 		return m;
 	}

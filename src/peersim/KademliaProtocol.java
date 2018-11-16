@@ -64,7 +64,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 	/**
 	 * Node store
 	 */
-	private HashMap<BigInteger,Object> storeMap;
+	private TreeMap<BigInteger,Object> storeMap;
 
 	/**
 	 * node store capacity
@@ -118,7 +118,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 
 		findOp = new LinkedHashMap<Long, FindOperation>();
 
-		storeMap = new HashMap<>();
+		storeMap = new TreeMap<>();
 
 		//给每个节点随机分配存储容量，为下面三个中之一
 		int[] arr = {100,500,1000};
@@ -205,12 +205,12 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 		}
 
 		// get corresponding find operation (using the message field operationId)
-		FindOperation fop = this.findOp.get(m.operationId);//拿到fop,整个查找过程用同一个operationId
+		FindOperation fop = this.findOp.get(m.operationId);//拿到fop，各个node维护fop map，相当于一个传输过程，过程中各节点保持一致
 
 		if (fop != null) {
 			// save received neighbor in the closest Set of find operation
 			try {
-				fop.elaborateResponse((BigInteger[]) m.body);//m.body回传节点已知的k个离目标最近节点，用这些节点更新closeSet
+				fop.elaborateResponse((BigInteger[]) m.body);//m.body中节点已知的k个离目标最近节点，用这些节点更新fop的closeSet
 			} catch (Exception ex) {
 				fop.available_requests++;
 			}
@@ -235,13 +235,22 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 				} else if (fop.available_requests == KademliaCommonConfig.ALPHA) { // no new neighbor and no outstanding requests
 					// search operation finished
 					findOp.remove(fop.operationId);
-
+					//随机生成的FIND_NODE消息
 					if (fop.body.equals("Automatically Generated Traffic") && fop.closestSet.containsKey(fop.destNode)) {
-						// update statistics һ��findOp������ͳ��
+						// update statistics
 						long timeInterval = (CommonState.getTime()) - (fop.timestamp);
 						KademliaObserver.timeStore.add(timeInterval);
 						KademliaObserver.hopStore.add(fop.nrHops);
 						KademliaObserver.msg_deliv.add(1);
+					}else if(fop.body instanceof  StoreFile){  //add store to closeset
+						for (BigInteger node: fop.closestSet.keySet()
+							 ) {
+							Message storeMsg = new Message(Message.MSG_STORE,fop.body);
+							storeMsg.src =  this.nodeId;
+							storeMsg.dest = node;
+							storeMsg.operationId = m.operationId;
+							sendMessage(storeMsg,node,myPid);
+						}
 					}
 
 					return;
@@ -258,7 +267,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 	/**
 	 * Response to a route request.<br>
 	 * Find the ALPHA closest node consulting the k-buckets and return them to the sender.
-	 *返回本节点已知的ALPHA个离目标节点最近的节点
+	 *返回本节点已知的K个离目标节点最近的节点
 	 * @param m
 	 *            Message
 	 * @param myPid
@@ -302,7 +311,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 		fop.elaborateResponse(neighbours);
 		fop.available_requests = KademliaCommonConfig.ALPHA;
 
-		// set message operation id
+		// set message operation id，将信息转发
 		m.operationId = fop.operationId;
 		m.type = Message.MSG_ROUTE;
 		m.src = this.nodeId;
@@ -317,6 +326,15 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 		}
 
 	}
+
+
+	public void store(Message m,int myPid){
+		StoreFile sf = (StoreFile) m.body;
+		this.storeMap.put(sf.getKey(),sf.getValue());
+		this.storeCapacity -= sf.getSize();
+		System.out.println("Node:"+this.nodeId+"storing kv data:"+sf.toString());
+	}
+
 
 	/**
 	 * send a message with current transport layer and starting the timeout timer (which is an event) if the message is a request
@@ -392,11 +410,14 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 				break;
 
 			case Message.MSG_STORE:
+				m = (Message)event;
+				store(m,myPid);
 				break;
 
 			case Message.MSG_STORE_REQUEST:
 				m = (Message)event;
 				System.out.println("This node:" + this.getNodeId()+"get kv:"+m.body);
+				find(m,myPid);
 				break;
 
 			case Timeout.TIMEOUT: // timeout

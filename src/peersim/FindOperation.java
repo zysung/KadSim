@@ -76,7 +76,7 @@ public class FindOperation {
 	/**
 	 * update closestSet with the new information received
 	 * 
-	 * @param neighbours 	用新收到的一堆节点更新closeSet
+	 * @param neighbours 	用节点的k个neighbours更新节点该次fop的closeSet
 	 */
 	public void elaborateResponse(BigInteger[] neighbours) {
 		// update responseNumber
@@ -103,7 +103,7 @@ public class FindOperation {
 								nodemaxdist = i;
 							}
 						}
-						//将最长距离节点移除，并将新知道的节点加入closeSet
+						//将最长距离节点移除，并将新的neighbor加入closeSet
 						if (nodemaxdist.compareTo(n) != 0) {
 							closestSet.remove(nodemaxdist);
 							closestSet.put(n, false);

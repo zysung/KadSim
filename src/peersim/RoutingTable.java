@@ -58,16 +58,16 @@ public class RoutingTable implements Cloneable {
 		ArrayList<BigInteger> neighbour_candidates = new ArrayList<BigInteger>();
 
 		// get the length of the longest common prefix
-		int prefix_len = Util.prefixLen(nodeId, key);
+		int prefix_len = Util.prefixLen(nodeId, key);//计算目标节点与当前节点的共同前缀长确定kbuckets中位于哪个桶中
 
 		// return the k-bucket if is full
-		if (k_buckets.get(prefix_len).neighbours.size() >= KademliaCommonConfig.K) {
-			return k_buckets.get(prefix_len).neighbours.keySet().toArray(result);
+		if (k_buckets.get(prefix_len).neighbours.size() >= KademliaCommonConfig.K) { //如果kbuckets中该桶的大小是满的
+			return k_buckets.get(prefix_len).neighbours.keySet().toArray(result);//返回整个kbucket给src
 		}
 
 		// else get k closest node from all k-buckets
 		prefix_len = 0;
-		while (prefix_len < KademliaCommonConfig.ALPHA) {
+		while (prefix_len < KademliaCommonConfig.ALPHA) {  //将一些nodeID加入候选list
 			neighbour_candidates.addAll(k_buckets.get(prefix_len).neighbours.keySet());
 			// remove source id
 			neighbour_candidates.remove(src);
@@ -77,12 +77,12 @@ public class RoutingTable implements Cloneable {
 		// create a map (distance, node)
 		TreeMap<BigInteger, BigInteger> distance_map = new TreeMap<BigInteger, BigInteger>();
 
-		for (BigInteger node : neighbour_candidates) {
+		for (BigInteger node : neighbour_candidates) {//根据距离给候选list节点排序
 			distance_map.put(Util.distance(node, key), node);
 		}
 
 		int i = 0;
-		for (BigInteger iii : distance_map.keySet()) {
+		for (BigInteger iii : distance_map.keySet()) {//选出最近的k个节点返回
 			if (i < KademliaCommonConfig.K) {
 				result[i] = distance_map.get(iii);
 				i++;
