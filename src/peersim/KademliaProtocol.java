@@ -243,7 +243,6 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 						KademliaObserver.hopStore.add(fop.nrHops);
 						KademliaObserver.msg_deliv.add(1);
 					}else if(fop.body instanceof  StoreFile){  //add store to closeset
-						System.out.println("find hops:"+fop.nrHops);
 						for (BigInteger node: fop.closestSet.keySet()
 							 ) {
 							Message storeMsg = new Message(Message.MSG_STORE,fop.body);
@@ -252,7 +251,6 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 							storeMsg.operationId = m.operationId;
 							sendMessage(storeMsg,node,myPid);
 						}
-						KademliaObserver.stored_msg.add(1);
 					}
 
 					return;
@@ -332,9 +330,15 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 
 	public void store(Message m,int myPid){
 		StoreFile sf = (StoreFile) m.body;
-		this.storeMap.put(sf.getKey(),sf.getValue());
-		this.storeCapacity -= sf.getSize();
-		System.out.println("Node:"+this.nodeId+"storing kv data:"+sf.toString());
+		if(this.storeCapacity>=sf.getSize()) {
+			this.storeMap.put(sf.getKey(), sf.getValue());
+			this.storeCapacity -= sf.getSize();
+			System.out.println("Node:" + this.nodeId + "storing kv data:" + sf.toString());
+			KademliaObserver.stored_msg.add(1);
+		}else {
+			System.out.println("Node:" + this.nodeId + "can't storing kv data:" + sf.toString());
+			KademliaObserver.unstored_msg.add(1);
+		}
 	}
 
 
