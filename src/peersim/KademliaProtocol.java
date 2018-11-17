@@ -243,6 +243,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 						KademliaObserver.hopStore.add(fop.nrHops);
 						KademliaObserver.msg_deliv.add(1);
 					}else if(fop.body instanceof  StoreFile){  //add store to closeset
+						System.out.println("find hops:"+fop.nrHops);
 						for (BigInteger node: fop.closestSet.keySet()
 							 ) {
 							Message storeMsg = new Message(Message.MSG_STORE,fop.body);
@@ -251,6 +252,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 							storeMsg.operationId = m.operationId;
 							sendMessage(storeMsg,node,myPid);
 						}
+						KademliaObserver.stored_msg.add(1);
 					}
 
 					return;
@@ -417,6 +419,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 			case Message.MSG_STORE_REQUEST:
 				m = (Message)event;
 				System.out.println("This node:" + this.getNodeId()+"get kv:"+m.body);
+				System.out.println("the generateStore:"+StoreMessageGenerator.generateStore.size());
 				find(m,myPid);
 				break;
 

@@ -39,6 +39,11 @@ public class KademliaObserver implements Control {
 	 */
 	public static IncrementalStats find_op = new IncrementalStats();
 
+	/**
+	 * keep statistic of number of store message,表示成功存储的kv个数
+	 */
+	public static IncrementalStats stored_msg = new IncrementalStats();
+
 	/** Parameter of the protocol we want to observe */
 	private static final String PAR_PROT = "protocol";
 
@@ -65,7 +70,7 @@ public class KademliaObserver implements Control {
 			if (!Network.get(i).isUp())
 				sz--;
 
-		String s = String.format("[time=%d]:[N=%d current nodes UP] [D=%f msg deliv] [%f min h] [%f average h] [%f max h] [%d min l] [%d msec average l] [%d max l] [%d findop sum]", CommonState.getTime(), sz, msg_deliv.getSum(),hopStore.getMin(), hopStore.getAverage(), hopStore.getMax(), (int) timeStore.getMin(), (int) timeStore.getAverage(), (int) timeStore.getMax(),(int)find_op.getSum());
+		String s = String.format("[time=%d]:[N=%d current nodes UP] [D=%f msg deliv] [%f min h] [%f average h] [%f max h] [%d min l] [%d msec average l] [%d max l] [%d findop sum] [%d storeMsg sum] ", CommonState.getTime(), sz, msg_deliv.getSum(),hopStore.getMin(), hopStore.getAverage(), hopStore.getMax(), (int) timeStore.getMin(), (int) timeStore.getAverage(), (int) timeStore.getMax(),(int)find_op.getSum(),(int)stored_msg.getSum());
 
 		if (CommonState.getTime() == 3600000) {
 			// create hop file

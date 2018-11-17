@@ -8,6 +8,7 @@ import peersim.core.Node;
 import peersim.edsim.EDSimulator;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -31,10 +32,11 @@ public class StoreMessageGenerator implements Control {
 	 */
 	private final int pid;
 
+	public static HashMap<BigInteger,Object> generateStore = new HashMap<>();
+
 	// ______________________________________________________________________________________________
 	public StoreMessageGenerator(String prefix) {
 		pid = Configuration.getPid(prefix + "." + PAR_PROT);
-
 	}
 
 	/**
@@ -51,6 +53,7 @@ public class StoreMessageGenerator implements Control {
 			e.printStackTrace();
 		}
 		StoreFile sf = new StoreFile(key,value);
+		generateStore.put(key,value);
 		Message m = Message.makeStoreReq(sf);
 		m.timestamp = CommonState.getTime();
 		m.dest = key;
