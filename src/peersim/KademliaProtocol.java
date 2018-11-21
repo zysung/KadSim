@@ -251,6 +251,15 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 							storeMsg.operationId = m.operationId;
 							sendMessage(storeMsg,node,myPid);
 						}
+					}else if(fop.body instanceof String){
+						for (BigInteger node: fop.closestSet.keySet()
+								) {
+							Message findValMsg = new Message(Message.MSG_FINDVALUE,fop.body);
+							findValMsg.src = this.nodeId;
+							findValMsg.dest = node;
+							findValMsg.operationId = m.operationId;
+							sendMessage(findValMsg,node,myPid);
+						}
 					}
 
 					return;
@@ -341,6 +350,18 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 		}
 	}
 
+	public void getValue(Message m,int myPid){
+		String value = (String)m.body;
+		for (Object val:this.storeMap.values()
+			 ) {
+			if(val.equals(value)){
+				Message returnValMsg = new Message(Message.MSG_RETURNVALUE,value);
+
+			}
+		}
+
+	}
+
 
 	/**
 	 * send a message with current transport layer and starting the timeout timer (which is an event) if the message is a request
@@ -423,8 +444,19 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 			case Message.MSG_STORE_REQUEST:
 				m = (Message)event;
 				System.out.println("This node:" + this.getNodeId()+"get kv:"+m.body);
-				System.out.println("the generateStore:"+StoreMessageGenerator.generateStore.size());
+				System.out.println("the generateStore:"+StoreMessageGenerator.generateStoreVals.size());
 				find(m,myPid);
+				break;
+
+			case Message.MSG_FINDVALUE_REQ:
+				m = (Message)event;
+				System.out.println("This node:" + this.getNodeId()+"finding value:"+m.body);
+				find(m,myPid);
+				break;
+
+			case Message.MSG_FINDVALUE:
+				m = (Message)event;
+				getValue(m,myPid);
 				break;
 
 			case Timeout.TIMEOUT: // timeout

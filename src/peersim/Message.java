@@ -1,5 +1,7 @@
 package peersim;
 
+import sun.misc.resources.Messages_fr;
+
 import java.math.BigInteger;
 
 /**
@@ -61,7 +63,12 @@ public class Message extends SimpleEvent {
 	 */
 	public static final int MSG_STORE_REQUEST = 5;
 
+	/**
+	 * Message Type: MSG_FINDVALUE
+	 */
+	public static final int  MSG_FINDVALUE_REQ= 6;
 
+	public static final int MSG_FINDVALUE = 7;
 	// ______________________________________________________________________________________________
 	/**
 	 * This Object contains the body of the message, no matter what it contains
@@ -163,6 +170,15 @@ public class Message extends SimpleEvent {
 	 */
 	public static final Message makeStoreReq(Object body){
 		return new Message(MSG_STORE_REQUEST,body);
+	}
+
+	/**
+	 * make a findvalue request
+	 * @param body
+	 * @return
+	 */
+	public static final Message makeFindValue(Object  body){
+		return new Message(MSG_FINDVALUE,body);
 	}
 
 	// ______________________________________________________________________________________________

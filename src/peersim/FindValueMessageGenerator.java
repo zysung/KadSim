@@ -8,9 +8,8 @@ import peersim.core.Node;
 import peersim.edsim.EDSimulator;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -21,7 +20,7 @@ import java.util.UUID;
  */
 
 // ______________________________________________________________________________________________
-public class StoreMessageGenerator implements Control {
+public class FindValueMessageGenerator implements Control {
 
 	// ______________________________________________________________________________________________
 	/**
@@ -34,33 +33,34 @@ public class StoreMessageGenerator implements Control {
 	 */
 	private final int pid;
 
-	public static List<String> generateStoreVals= new ArrayList<>();
 
 	// ______________________________________________________________________________________________
-	public StoreMessageGenerator(String prefix) {
+	public FindValueMessageGenerator(String prefix) {
 		pid = Configuration.getPid(prefix + "." + PAR_PROT);
 	}
 
-	/**
-	 * 生成key为随机160bit,value为一个空obj的模拟StoreFile
+    /**
+     * 生成key为随机160bit,value为一个空obj的模拟StoreFile
 	 * @return
-	 */
+     */
 	//______________________________________________________________________________________________
-	private Message generateStoreMessage(){
-		String value = UUID.randomUUID().toString().replace("-","");
-		BigInteger key = null;
-		try {
-			key = new BigInteger(SHA1.shaEncode(value),16);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		StoreFile sf = new StoreFile(key,value);
-		generateStoreVals.add(value);
-		Message m = Message.makeStoreReq(sf);
-		m.timestamp = CommonState.getTime();
-		m.dest = key;
+	private Message generateFindValueMessage(){
+		if(StoreMessageGenerator.generateStoreVals != null && !StoreMessageGenerator.generateStoreVals.isEmpty()) {
+			String value = StoreMessageGenerator.generateStoreVals.get(new Random().nextInt(StoreMessageGenerator.generateStoreVals.size()));
+			BigInteger key = null;
+			try {
+				key = new BigInteger(SHA1.shaEncode(value), 16);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
-		return m;
+			Message m = Message.makeStoreReq(value);
+			m.timestamp = CommonState.getTime();
+			m.dest = key;
+
+			return m;
+		}
+		return null;
 	}
 
 
@@ -78,8 +78,9 @@ public class StoreMessageGenerator implements Control {
 		} while ((start == null) || (!start.isUp()));
 
 		// send message
-//		System.out.println(((KademliaProtocol)start.getProtocol(pid)).getNodeId());
-		EDSimulator.add(0, generateStoreMessage(), start, pid);
+		if(StoreMessageGenerator.generateStoreVals != null && !StoreMessageGenerator.generateStoreVals.isEmpty()) {
+			EDSimulator.add(0, generateFindValueMessage(), start, pid);
+		}
 
 		return false;
 	}
