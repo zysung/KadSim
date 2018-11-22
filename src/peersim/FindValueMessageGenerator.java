@@ -54,7 +54,7 @@ public class FindValueMessageGenerator implements Control {
 				e.printStackTrace();
 			}
 
-			Message m = Message.makeStoreReq(value);
+			Message m = Message.makeFindValue(value);
 			m.timestamp = CommonState.getTime();
 			m.dest = key;
 

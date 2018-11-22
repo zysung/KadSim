@@ -28,6 +28,7 @@ import java.math.BigInteger;
 // ______________________________________________________________________________________
 public class Message extends SimpleEvent {
 
+
 	/**
 	 * internal generator for unique message IDs
 	 */
@@ -69,6 +70,8 @@ public class Message extends SimpleEvent {
 	public static final int  MSG_FINDVALUE_REQ= 6;
 
 	public static final int MSG_FINDVALUE = 7;
+
+	public static final int MSG_RETURNVALUE = 8;
 	// ______________________________________________________________________________________________
 	/**
 	 * This Object contains the body of the message, no matter what it contains
@@ -178,7 +181,7 @@ public class Message extends SimpleEvent {
 	 * @return
 	 */
 	public static final Message makeFindValue(Object  body){
-		return new Message(MSG_FINDVALUE,body);
+		return new Message(MSG_FINDVALUE_REQ,body);
 	}
 
 	// ______________________________________________________________________________________________
