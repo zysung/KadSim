@@ -41,15 +41,20 @@ public class KademliaObserver implements Control {
 	public static IncrementalStats find_op = new IncrementalStats();
 
 	/**
-	 * keep statistic of number of  successful store message,表示成功存储的kv个数
+	 * keep statistic of number of  successful store message,表示成功存储的kv个数(ps:成功存储到一个节点就算成功存储)
 	 */
 	public static IncrementalStats stored_msg = new IncrementalStats();
 
 	/**
-	 * keep statistic of number of  failed store message,表示成功存储的kv个数
+	 * keep statistic of number of  failed store message,表示存储失败的kv个数
 	 */
-	public static IncrementalStats unstored_msg = new IncrementalStats();
+	public static IncrementalStats sentostore_msg = new IncrementalStats();
 
+
+	/**
+	 * 过载节点的个数
+	 */
+	public static IncrementalStats overloadNode = new IncrementalStats();
 	/**
 	 * keep statistic of number of  find value success,表示成功find value的次数
 	 */
@@ -89,7 +94,7 @@ public class KademliaObserver implements Control {
 				sz--;
 
 		String s = String.format("[time=%d]:[N=%d current nodes UP] [D=%f msg deliv] [%f min h] [%f average h] [%f max h] [%d min l] [%d msec average l] [%d max l] [%d findop sum] [%d storedMsg sum]  [%d unstoredMsg sum] [%d findValueSuccess sum]，[%d findValueTimes]",
-				CommonState.getTime(), sz, msg_deliv.getSum(),hopStore.getMin(), hopStore.getAverage(), hopStore.getMax(), (int) timeStore.getMin(), (int) timeStore.getAverage(), (int) timeStore.getMax(),(int)find_op.getSum(),(int)stored_msg.getSum(),(int)unstored_msg.getSum(),(int)findVal_success.getSum(),(int)findVal_times.getSum());
+				CommonState.getTime(), sz, msg_deliv.getSum(),hopStore.getMin(), hopStore.getAverage(), hopStore.getMax(), (int) timeStore.getMin(), (int) timeStore.getAverage(), (int) timeStore.getMax(),(int)find_op.getSum(),(int)stored_msg.getSum(),(int)sentostore_msg.getSum(),(int)findVal_success.getSum(),(int)findVal_times.getSum());
 
 		if (CommonState.getTime() == 3600000) {
 			// create hop file

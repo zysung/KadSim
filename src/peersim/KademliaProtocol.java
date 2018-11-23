@@ -64,15 +64,22 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 	 */
 	private TreeMap<BigInteger,Object> storeMap;
 
-	private List<String> receivedVals;
+	/**
+	 * send sth to store map <value,store times>
+	 */
+	private Map<String,Integer>  storeTimesMap;
 
-	private List<String> findVals;
-
+	private boolean storeSucceedFlag = false;
 
 	/**
 	 * node store capacity
 	 */
 	private int storeCapacity;
+
+
+	private List<String> receivedVals;
+
+	private List<String> findVals;
 
 	/**
 	 * Replicate this object by returning an identical copy.<br>
@@ -127,8 +134,11 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 
 		findVals = new ArrayList<>();
 
+		storeTimesMap = new HashMap<>();
+
 		//给每个节点随机分配存储容量，为下面三个中之一
 		int[] arr = {100,500,1000};
+//		int[] arr = {500};
 		int rand = (int)(Math.random() * arr.length);
 		storeCapacity = arr[rand];
 
@@ -250,13 +260,14 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 						KademliaObserver.hopStore.add(fop.nrHops);
 						KademliaObserver.msg_deliv.add(1);
 					}else if(fop.body instanceof  StoreFile){  //add store to closeset
-						for (BigInteger node: fop.closestSet.keySet()
-							 ) {
+						int i = 3;
+						for (BigInteger node: fop.closestSet.keySet()) {
 							Message storeMsg = new Message(Message.MSG_STORE,fop.body);
 							storeMsg.src =  this.nodeId;
 							storeMsg.dest = node;
 							storeMsg.operationId = m.operationId;
 							sendMessage(storeMsg,node,myPid);
+							if(--i == 0) break;
 						}
 					}else if(fop.body instanceof String){
 						for (BigInteger node: fop.closestSet.keySet()
@@ -322,6 +333,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 		fop.body = m.body;
 		findOp.put(fop.operationId, fop);
 
+
 		// get the ALPHA closest node to srcNode and add to find operation
 		BigInteger[] neighbours = this.routingTable.getNeighbours(m.dest, this.nodeId);
 		fop.elaborateResponse(neighbours);
@@ -346,16 +358,40 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 
 	private void store(Message m,int myPid){
 		StoreFile sf = (StoreFile) m.body;
+		boolean storedSucceed = false;
 		if(this.storeCapacity>=sf.getSize()) {
 			this.storeMap.put(sf.getKey(), sf.getValue());
 			this.storeCapacity -= sf.getSize();
+//			StoreMessageGenerator.generateStoreVals.add((String)((StoreFile)m.body).getValue());
 			System.out.println("Node:" + this.nodeId + " storing kv data:" + sf.toString());
-			KademliaObserver.stored_msg.add(1);
+//			KademliaObserver.stored_msg.add(1);
+			storedSucceed = true;
 		}else {
 			System.out.println("Node:" + this.nodeId + " can't storing kv data:" + sf.toString());
-			KademliaObserver.unstored_msg.add(1);
+		}
+		String respBody = sf.getValue() + "-"+storedSucceed;
+		Message storeRespMsg = new Message(Message.MSG_STORE_RESP,respBody);
+		storeRespMsg.src = this.nodeId;
+		storeRespMsg.dest = m.src;
+		storeRespMsg.operationId = m.operationId;
+		sendMessage(storeRespMsg,m.src,myPid);
+	}
+
+	private void getStoreResp(Message m,int myPid){
+		String resp = (String)m.body;
+		String value = resp.split("-")[0];
+		boolean isSucceed =  Boolean.parseBoolean(resp.split("-")[1]);
+		if(this.storeTimesMap.keySet().contains(value) && isSucceed){
+			int times = storeTimesMap.get(value);
+			if(times > 0 && !storeSucceedFlag){
+				storeSucceedFlag = true;
+				KademliaObserver.stored_msg.add(1);
+			}
+			storeTimesMap.replace(value,times,++times);
 		}
 	}
+
+
 
 	private void getValue(Message m,int myPid){
 		String value = (String)m.body;
@@ -367,7 +403,7 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 				returnValMsg.dest = m.src;
 				returnValMsg.operationId = m.operationId;
 				returnValMsg.body = val;
-				System.out.println("node:"+nodeId+"return value "+val+" to node:"+m.src);
+				System.out.println("node:"+nodeId+" return value "+val+" to node:"+m.src);
 				sendMessage(returnValMsg,m.src,myPid);
 				break;
 			}
@@ -468,30 +504,37 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 				System.out.println("This node:" + this.getNodeId()+"get kv to store:"+m.body);
 				System.out.println("the generateStore:"+StoreMessageGenerator.generateStoreVals.size());
 				find(m,myPid);
+				KademliaObserver.sentostore_msg.add(1);
+				this.storeTimesMap.put((String)((StoreFile) m.body).getValue(),0);
 				break;
 
-			case Message.MSG_FINDVALUE_REQ:
+			case Message.MSG_STORE_RESP:
 				m = (Message)event;
-				System.out.println("This node:" + this.getNodeId()+"finding value:"+m.body);
-				if(!findVals.contains((String)m.body)) {
-					findVals.add((String) m.body);
-					find(m, myPid);
-					System.err.println("node:"+this.nodeId+"'s findVals:"+this.findVals);
-					KademliaObserver.findVal_times.add(1);
-				}else {
-					System.out.println("This node already find this value:" + m.body);
-				}
+				getStoreResp(m,myPid);
 				break;
 
-			case Message.MSG_FINDVALUE:
-				m = (Message)event;
-				getValue(m,myPid);
-				break;
+//			case Message.MSG_FINDVALUE_REQ:
+//				m = (Message)event;
+//				System.out.println("This node:" + this.getNodeId()+"finding value:"+m.body);
+//				if(!findVals.contains((String)m.body)) {
+//					findVals.add((String) m.body);
+//					find(m, myPid);
+//					System.err.println("node:"+this.nodeId+"'s findVals:"+this.findVals);
+//					KademliaObserver.findVal_times.add(1);
+//				}else {
+//					System.out.println("This node already find this value:" + m.body);
+//				}
+//				break;
 
-			case Message.MSG_RETURNVALUE:
-				m = (Message)event;
-				receiveVal(m,myPid);
-				break;
+//			case Message.MSG_FINDVALUE:
+//				m = (Message)event;
+//				getValue(m,myPid);
+//				break;
+
+//			case Message.MSG_RETURNVALUE:
+//				m = (Message)event;
+//				receiveVal(m,myPid);
+//				break;
 
 			case Timeout.TIMEOUT: // timeout
 				Timeout t = (Timeout) event;

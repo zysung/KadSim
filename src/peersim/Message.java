@@ -64,14 +64,18 @@ public class Message extends SimpleEvent {
 	 */
 	public static final int MSG_STORE_REQUEST = 5;
 
+	public static final int MSG_STORE_RESP = 6;
+
 	/**
 	 * Message Type: MSG_FINDVALUE
 	 */
-	public static final int  MSG_FINDVALUE_REQ= 6;
+	public static final int  MSG_FINDVALUE_REQ= 7;
 
-	public static final int MSG_FINDVALUE = 7;
+	public static final int MSG_FINDVALUE = 8;
 
-	public static final int MSG_RETURNVALUE = 8;
+	public static final int MSG_RETURNVALUE = 9;
+
+
 	// ______________________________________________________________________________________________
 	/**
 	 * This Object contains the body of the message, no matter what it contains
