@@ -29,6 +29,8 @@ import java.math.BigInteger;
 public class Message extends SimpleEvent {
 
 
+	public static final int MSG_STORE_SPACE_REQ = 10;
+	public static final int MSG_STORE_SPACE_RESP = 11;
 	/**
 	 * internal generator for unique message IDs
 	 */

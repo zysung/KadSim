@@ -2,6 +2,7 @@ package peersim;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 /**
  * This class represents a find operation and offer the methods needed to maintain and update the closest set.<br>
@@ -52,6 +53,9 @@ public class FindOperation {
 	 * or not
 	 */
 	protected HashMap<BigInteger, Boolean> closestSet;
+
+	//test
+	protected TreeMap<BigInteger,Integer> nodeSpace = new TreeMap<>();
 
 	/**
 	 * defaul constructor

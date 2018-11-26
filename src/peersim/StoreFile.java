@@ -7,6 +7,7 @@ public class StoreFile {
     private BigInteger key;
     private Object value;
     private int size = 64;
+    private int storeNodeRemainSize;
 
     public StoreFile(BigInteger key, Object value) {
         this.key = key;
@@ -19,6 +20,7 @@ public class StoreFile {
                 "key=" + key +
                 ", value=" + value +
                 ", size=" + size +
+                ", storeNodeRemainSize=" + storeNodeRemainSize +
                 '}';
     }
 
@@ -44,5 +46,13 @@ public class StoreFile {
 
     public void setSize(int size) {
         this.size = size;
+    }
+
+    public int getStoreNodeRemainSize() {
+        return storeNodeRemainSize;
+    }
+
+    public void setStoreNodeRemainSize(int storeNodeRemainSize) {
+        this.storeNodeRemainSize = storeNodeRemainSize;
     }
 }

@@ -45,12 +45,15 @@ public class KademliaObserver implements Control {
 	 */
 	public static IncrementalStats stored_msg = new IncrementalStats();
 
+	public static IncrementalStats real_store_operation = new IncrementalStats();
+
+
 	/**
 	 * keep statistic of number of  failed store message,表示存储失败的kv个数
 	 */
-	public static IncrementalStats sentostore_msg = new IncrementalStats();
+	public static IncrementalStats sendtostore_msg = new IncrementalStats();
 
-
+	public static IncrementalStats sendstore_resp = new IncrementalStats();
 	/**
 	 * 过载节点的个数
 	 */
@@ -93,8 +96,8 @@ public class KademliaObserver implements Control {
 			if (!Network.get(i).isUp())
 				sz--;
 
-		String s = String.format("[time=%d]:[N=%d current nodes UP] [D=%f msg deliv] [%f min h] [%f average h] [%f max h] [%d min l] [%d msec average l] [%d max l] [%d findop sum] [%d storedMsg sum]  [%d unstoredMsg sum] [%d findValueSuccess sum]，[%d findValueTimes]",
-				CommonState.getTime(), sz, msg_deliv.getSum(),hopStore.getMin(), hopStore.getAverage(), hopStore.getMax(), (int) timeStore.getMin(), (int) timeStore.getAverage(), (int) timeStore.getMax(),(int)find_op.getSum(),(int)stored_msg.getSum(),(int)sentostore_msg.getSum(),(int)findVal_success.getSum(),(int)findVal_times.getSum());
+		String s = String.format("[time=%d]:[N=%d current nodes UP] [D=%f msg deliv] [%f min h] [%f average h] [%f max h] [%d min l] [%d msec average l] [%d max l] [%d findop sum] [%d sendstore_resp sum]  [%d storedMsg sum]  [%d sendtostore_msg sum] [%d findValueSuccess sum] [%d findValueTimes][%d realStoreOperation]",
+				CommonState.getTime(), sz, msg_deliv.getSum(),hopStore.getMin(), hopStore.getAverage(), hopStore.getMax(), (int) timeStore.getMin(), (int) timeStore.getAverage(), (int) timeStore.getMax(),(int)find_op.getSum(),(int)sendstore_resp.getSum(),(int)stored_msg.getSum(),(int)sendtostore_msg.getSum(),(int)findVal_success.getSum(),(int)findVal_times.getSum(),(int)real_store_operation.getSum());
 
 		if (CommonState.getTime() == 3600000) {
 			// create hop file

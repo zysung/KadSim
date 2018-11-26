@@ -75,7 +75,10 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 	 * node store capacity
 	 */
 	private int storeCapacity;
-
+	/**
+	 * 存节点发来的存储容量，排序后再发STORE
+	 */
+	private Map<BigInteger,Integer> nodeSpace;
 
 	private List<String> receivedVals;
 
@@ -135,6 +138,8 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 		findVals = new ArrayList<>();
 
 		storeTimesMap = new HashMap<>();
+
+		nodeSpace = new TreeMap<>();
 
 		//给每个节点随机分配存储容量，为下面三个中之一
 		int[] arr = {100,500,1000};
@@ -260,14 +265,13 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 						KademliaObserver.hopStore.add(fop.nrHops);
 						KademliaObserver.msg_deliv.add(1);
 					}else if(fop.body instanceof  StoreFile){  //add store to closeset
-						int i = 3;
 						for (BigInteger node: fop.closestSet.keySet()) {
-							Message storeMsg = new Message(Message.MSG_STORE,fop.body);
-							storeMsg.src =  this.nodeId;
-							storeMsg.dest = node;
-							storeMsg.operationId = m.operationId;
-							sendMessage(storeMsg,node,myPid);
-							if(--i == 0) break;
+							Message storeSpaceReqMsg = new Message(Message.MSG_STORE_SPACE_REQ,fop.body);
+							storeSpaceReqMsg.src =  this.nodeId;
+							storeSpaceReqMsg.dest = node;
+							storeSpaceReqMsg.operationId = m.operationId;
+							sendMessage(storeSpaceReqMsg,node,myPid);
+//							System.out.println("send space ask msg to node:"+node);
 						}
 					}else if(fop.body instanceof String){
 						for (BigInteger node: fop.closestSet.keySet()
@@ -361,36 +365,80 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 		boolean storedSucceed = false;
 		if(this.storeCapacity>=sf.getSize()) {
 			this.storeMap.put(sf.getKey(), sf.getValue());
+			System.out.println("Node:" + this.nodeId+"("+this.storeCapacity+"-"+sf.getSize()+")" + " storing kv data:" + sf.toString());
 			this.storeCapacity -= sf.getSize();
 //			StoreMessageGenerator.generateStoreVals.add((String)((StoreFile)m.body).getValue());
-			System.out.println("Node:" + this.nodeId + " storing kv data:" + sf.toString());
-//			KademliaObserver.stored_msg.add(1);
+
+			KademliaObserver.real_store_operation.add(1);
 			storedSucceed = true;
 		}else {
-			System.out.println("Node:" + this.nodeId + " can't storing kv data:" + sf.toString());
+			System.out.println("Node:" + this.nodeId+ ":" +this.storeCapacity+ " can't storing kv data:" + sf.toString());
 		}
 		String respBody = sf.getValue() + "-"+storedSucceed;
 		Message storeRespMsg = new Message(Message.MSG_STORE_RESP,respBody);
 		storeRespMsg.src = this.nodeId;
 		storeRespMsg.dest = m.src;
 		storeRespMsg.operationId = m.operationId;
+		KademliaObserver.sendstore_resp.add(1);
 		sendMessage(storeRespMsg,m.src,myPid);
+
 	}
 
 	private void getStoreResp(Message m,int myPid){
 		String resp = (String)m.body;
 		String value = resp.split("-")[0];
 		boolean isSucceed =  Boolean.parseBoolean(resp.split("-")[1]);
+//		System.out.println(this.storeTimesMap.keySet().contains(value) );
 		if(this.storeTimesMap.keySet().contains(value) && isSucceed){
 			int times = storeTimesMap.get(value);
+//			System.out.println("times:"+times + "  flag:"+storeSucceedFlag);
+			storeTimesMap.put(value,++times);
 			if(times > 0 && !storeSucceedFlag){
 				storeSucceedFlag = true;
 				KademliaObserver.stored_msg.add(1);
 			}
-			storeTimesMap.replace(value,times,++times);
 		}
 	}
 
+	private void returnSpace(Message m,int myPid){
+		StoreFile sf = new StoreFile(((StoreFile) m.body).getKey(),((StoreFile) m.body).getValue());
+		sf.setSize(((StoreFile) m.body).getSize());
+		sf.setStoreNodeRemainSize(this.storeCapacity);
+		Message spaceRespMsg = new Message(Message.MSG_STORE_SPACE_RESP,sf);
+		spaceRespMsg.src = this.nodeId;
+		spaceRespMsg.dest = m.src;
+		spaceRespMsg.operationId = m.operationId;
+		sendMessage(spaceRespMsg,m.src,myPid);
+		System.out.println("node:"+this.nodeId+"return space:"+sf.getStoreNodeRemainSize());
+	}
+
+	private void sortBySpaceAndSendStore(Message m,int myPid){
+		//FindOperation fop = this.findOp.get(m.operationId);
+		System.out.println("node:"+this.nodeId+"receive space:"+((StoreFile)m.body).getStoreNodeRemainSize()+" from "+m.src);
+		this.nodeSpace.put(m.src,((StoreFile)m.body).getStoreNodeRemainSize());
+
+		if(this.nodeSpace.size()>=KademliaCommonConfig.K){
+			List<Map.Entry<BigInteger, Integer>> list = new ArrayList<>(nodeSpace.entrySet());
+			// 通过比较器来实现排序
+			Collections.sort(list, (o1, o2) -> {
+				// 降序排序
+				return o2.getValue().compareTo(o1.getValue());
+			});
+//			for (Map.Entry<BigInteger, Integer> mapping : list) {
+//				System.out.println(mapping.getKey() + ":" + mapping.getValue());
+//			}
+			int i = 3;
+			for (Map.Entry<BigInteger, Integer> nodeMap : list) {
+				Message storeMsg = new Message(Message.MSG_STORE, m.body);
+				storeMsg.src = this.nodeId;
+				storeMsg.dest = nodeMap.getKey();
+				storeMsg.operationId = m.operationId;
+				sendMessage(storeMsg, nodeMap.getKey(), myPid);
+				if (--i == 0) break;
+			}
+			this.nodeSpace.clear();
+		}
+	}
 
 
 	private void getValue(Message m,int myPid){
@@ -504,13 +552,24 @@ public class KademliaProtocol implements Cloneable, EDProtocol {
 				System.out.println("This node:" + this.getNodeId()+"get kv to store:"+m.body);
 				System.out.println("the generateStore:"+StoreMessageGenerator.generateStoreVals.size());
 				find(m,myPid);
-				KademliaObserver.sentostore_msg.add(1);
 				this.storeTimesMap.put((String)((StoreFile) m.body).getValue(),0);
+
+				KademliaObserver.sendtostore_msg.add(1);
 				break;
 
 			case Message.MSG_STORE_RESP:
 				m = (Message)event;
 				getStoreResp(m,myPid);
+				break;
+
+			case Message.MSG_STORE_SPACE_REQ:
+				m = (Message)event;
+				returnSpace(m,myPid);
+				break;
+
+			case Message.MSG_STORE_SPACE_RESP:
+				m = (Message)event;
+				sortBySpaceAndSendStore(m,myPid);
 				break;
 
 //			case Message.MSG_FINDVALUE_REQ:
